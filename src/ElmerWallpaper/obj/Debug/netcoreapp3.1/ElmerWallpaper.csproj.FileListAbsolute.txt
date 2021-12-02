@@ -1,9 +1,0 @@
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\bin\Debug\netcoreapp3.1\ElmerWallpaper.deps.json
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\bin\Debug\netcoreapp3.1\ElmerWallpaper.dll
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\bin\Debug\netcoreapp3.1\ElmerWallpaper.pdb
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.csprojAssemblyReference.cache
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.AssemblyInfoInputs.cache
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.AssemblyInfo.cs
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.csproj.CoreCompileInputs.cache
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.dll
-C:\Users\johlov\source\repos\WallpaperMonitor\ElmerWallpaper\obj\Debug\netcoreapp3.1\ElmerWallpaper.pdb
