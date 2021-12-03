@@ -8,5 +8,6 @@ namespace ElmerWallpaper
     {
         public Rectangle Dimensions { get; set; }
         public IEnumerable<Screen> Screens { get; set; }
+
     }
 }
