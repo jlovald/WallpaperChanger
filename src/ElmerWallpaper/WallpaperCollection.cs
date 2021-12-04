@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wallpaper.Extensions;
 using Wallpaper.Options;
@@ -12,15 +13,21 @@ namespace Wallpaper
     public class WallpaperCollection
     {
         private List<Wallpaper> _wallpapers { get;} = new List<Wallpaper>();
-
+        private readonly ILogger<WallpaperCollection> _logger;
         private WallpaperSettings _wallpaperSettings { get; set; }
-        public WallpaperCollection(IOptions<WallpaperSettings> wallpaperSettings)
+        public WallpaperCollection(IOptions<WallpaperSettings> wallpaperSettings, ILogger<WallpaperCollection> logger)
         {
+
             _wallpaperSettings = wallpaperSettings.Value;
+            _logger = logger;
+
+            logger.LogInformation($"Checking folders from {wallpaperSettings.Value.WallpaperFolders.Count()} folder(s): {string.Join(", ", (IEnumerable<string>) wallpaperSettings.Value.WallpaperFolders)}");
+
             var dirs = _wallpaperSettings.WallpaperFolders.Select(path =>
             {
                 if (!Directory.Exists(path))
                 {
+                    _logger.LogError("Error checking path.", new DirectoryNotFoundException($"{path} is not a valid directory."));
                     throw new DirectoryNotFoundException($"{path} is not a valid directory.");
                 }
                 return new DirectoryInfo(path);
@@ -53,6 +60,7 @@ namespace Wallpaper
                     }
                     catch (Exception ex)
                     {
+                        _logger.LogError("Error caching image information", ex);
                         // ignored
                     }
                 }

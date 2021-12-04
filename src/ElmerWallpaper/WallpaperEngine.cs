@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ElmerWallpaper;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wallpaper.Extensions;
 using Wallpaper.Options;
@@ -17,16 +18,19 @@ namespace Wallpaper
 
         private readonly WallpaperSettings _wallpaperSettings;
         private readonly WallpaperCollection _wallpaperCollection;
-
-        public WallpaperEngine(IOptions<WallpaperSettings> wallpaperSettings, WallpaperCollection wallpaperCollection)
+        private readonly ILogger<WallpaperEngine> _logger;
+        public WallpaperEngine(IOptions<WallpaperSettings> wallpaperSettings, WallpaperCollection wallpaperCollection, ILogger<WallpaperEngine> logger)
         {
             _wallpaperSettings = wallpaperSettings.Value;
             _wallpaperCollection = wallpaperCollection;
+            _logger = logger;
         }
 
         public MonitorEnvironmentOverview GetMonitorsAndDimensions()
         {
             var screens = Screen.AllScreens;
+            _logger.LogInformation($"Got {screens.Length} monitors: ");
+            //  Handle scaling
             return GetMonitorsAndDimensions(screens);
         }
 
@@ -42,19 +46,22 @@ namespace Wallpaper
 
         public string CreateRandomWallpaper(WallpaperCollection wallpapers, MonitorEnvironmentOverview overview)
         {
+
             //  TODO use appdata or something like that instead.
             var path = ExecutingAssemblyContext.AssemblyDirectory;
 
             var canvas = new Bitmap(overview.Dimensions.Width, overview.Dimensions.Height);
             var g = Graphics.FromImage(canvas);
             g.Clear(SystemColors.AppWorkspace);
-    
+            
             foreach (var screen in overview.Screens)
             {
                 //  Get wallpaper for given resolution
                 var wallpaper = (wallpapers.GetWallpapers(screen.Bounds.Width, screen.Bounds.Height).Randomize())
                     .FirstOrDefault();
-                if(wallpaper == null) continue;
+                _logger.LogInformation("Got the following wallpaper ", wallpaper);
+
+                if (wallpaper == null) continue;
                 var img = Image.FromFile(wallpaper.FullPath);
 
                 //  calculate x and y based on origin.
@@ -65,8 +72,10 @@ namespace Wallpaper
             }
 
             g.Dispose();
-            var guid = Guid.NewGuid();
-            var fullPath = path + $"\\{guid}.bmp";
+            //var guid = Guid.NewGuid();
+            var fullPath = path + $"\\newWallpaper.bmp";
+            _logger.LogInformation($"Saving new wallpaper to: {fullPath}");
+
             canvas.Save(fullPath, System.Drawing.Imaging.ImageFormat.Bmp);
             canvas.Dispose();
 
@@ -77,6 +86,7 @@ namespace Wallpaper
 
         public string CreateRandomWallpaper()
         {
+            
             var monitorOverview = GetMonitorsAndDimensions();
             //  TODO use appdata or something like that instead.
             var path = ExecutingAssemblyContext.AssemblyDirectory;
@@ -102,7 +112,7 @@ namespace Wallpaper
 
             g.Dispose();
             var guid = Guid.NewGuid();
-            var fullPath = path + $"\\{guid}.bmp";
+            var fullPath = path + $"tmpWallpaper.bmp";
             canvas.Save(fullPath, System.Drawing.Imaging.ImageFormat.Bmp);
             canvas.Dispose();
 

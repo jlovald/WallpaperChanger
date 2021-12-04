@@ -21,9 +21,30 @@ namespace WallpaperMonitorService
             _wallpaperEngine = wallpaperEngine;
         }
 
+        public void SetWallpaper()
+        {
+            try
+            {
+                _wallpaperEngine.CreateRandomWallpaper();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error setting wallpaper.", ex);
+            }
+        }
+
         private void HandleDisplayChange(object obj, EventArgs e)
         {
-            _wallpaperEngine.CreateRandomWallpaper();
+            try
+            {
+                _logger.LogInformation("Display settings changed, set new wallpapers");
+                _wallpaperEngine.CreateRandomWallpaper();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error setting wallpaper.", ex);
+            }
+            
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
