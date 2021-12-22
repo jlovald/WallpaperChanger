@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Windows.Forms;
-using ElmerWallpaper;
-using Wallpaper;
-
 namespace WallpaperMonitor
 {
     class Program
@@ -13,6 +9,7 @@ namespace WallpaperMonitor
         {
             Console.WriteLine("Hello World!");
             //var engine = new Engine();
+            //var screens = Screen.AllScreens;
             //var overview = Engine.GetMonitorsAndDimensions();
             //var wallpapers = new WallpaperCollection(wallpaperPath);
             //var filename = Engine.CreateRandomWallpaper(wallpapers, overview);

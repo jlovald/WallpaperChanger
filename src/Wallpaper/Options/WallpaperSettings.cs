@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Wallpaper.Options
 {
@@ -6,6 +7,6 @@ namespace Wallpaper.Options
     {
         public string BackgroundColor { get; set; } = "";
         public IEnumerable<string> WallpaperFolders { get; set; }   //  Folders where wallpapers are stored.
-        public int WallpaperLifetime { get; set; } = 0; //  Dont' switch if 0.
+        public TimeSpan WallpaperLifetime { get; set; } //  Dont' switch if 0.
     }
 }

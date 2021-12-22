@@ -2,7 +2,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace ElmerWallpaper
+namespace Wallpaper
 {
     public static class ExecutingAssemblyContext
     {

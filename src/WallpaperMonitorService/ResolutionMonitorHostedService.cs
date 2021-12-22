@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -15,17 +17,19 @@ namespace WallpaperMonitorService
     {
         private readonly ILogger<ResolutionMonitorHostedService> _logger;
         private readonly WallpaperEngine _wallpaperEngine;
-        public ResolutionMonitorHostedService(ILogger<ResolutionMonitorHostedService> logger, WallpaperEngine wallpaperEngine)
+        private readonly IDisplaySettingsCache _displaySettingsCache;
+        public ResolutionMonitorHostedService(ILogger<ResolutionMonitorHostedService> logger, WallpaperEngine wallpaperEngine, IDisplaySettingsCache displaySettingsCache)
         {
             _logger = logger;
             _wallpaperEngine = wallpaperEngine;
+            _displaySettingsCache = displaySettingsCache;
         }
 
-        public void SetWallpaper()
+        public async void SetWallpaper()
         {
             try
             {
-                _wallpaperEngine.CreateRandomWallpaper();
+                await _wallpaperEngine.CreateRandomWallpaper();
             }
             catch (Exception ex)
             {
@@ -33,24 +37,31 @@ namespace WallpaperMonitorService
             }
         }
 
-        private void HandleDisplayChange(object obj, EventArgs e)
+        private  void HandleDisplayChange(object obj, EventArgs e)
         {
             try
             {
                 _logger.LogInformation("Display settings changed, set new wallpapers");
-                _wallpaperEngine.CreateRandomWallpaper();
+                if (_displaySettingsCache.HasChanged(Screen.AllScreens))
+                {
+                     _wallpaperEngine.CreateRandomWallpaper().RunSynchronously();
+
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Error setting wallpaper.", ex);
             }
             
+            
+
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
             SystemEvents.DisplaySettingsChanged += HandleDisplayChange;
             
+
             return Task.CompletedTask;
         }
 

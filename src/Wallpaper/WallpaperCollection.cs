@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -12,15 +13,14 @@ namespace Wallpaper
 {
     public class WallpaperCollection
     {
-        private List<Wallpaper> _wallpapers { get;} = new List<Wallpaper>();
+        private List<Wallpaper> Wallpapers { get;} = new List<Wallpaper>();
         private readonly ILogger<WallpaperCollection> _logger;
-        private WallpaperSettings _wallpaperSettings { get; set; }
+        private readonly WallpaperSettings _wallpaperSettings;
+
         public WallpaperCollection(IOptions<WallpaperSettings> wallpaperSettings, ILogger<WallpaperCollection> logger)
         {
-
             _wallpaperSettings = wallpaperSettings.Value;
             _logger = logger;
-
             logger.LogInformation($"Checking folders from {wallpaperSettings.Value.WallpaperFolders.Count()} folder(s): {string.Join(", ", (IEnumerable<string>) wallpaperSettings.Value.WallpaperFolders)}");
 
             var dirs = _wallpaperSettings.WallpaperFolders.Select(path =>
@@ -50,7 +50,7 @@ namespace Wallpaper
                         //  See if it's actually an image.
                         var image = Image.FromFile(file.FullName);
                         files.Add(file);
-                        _wallpapers.Add(new Wallpaper()
+                        Wallpapers.Add(new Wallpaper()
                         {
                             Filename = file.Name,
                             FullPath = file.FullName,
@@ -70,7 +70,7 @@ namespace Wallpaper
 
         public IEnumerable<Wallpaper> GetWallpapers(int width, int height)
         {
-            return _wallpapers.Where(w => w.Resolution.width == width && w.Resolution.height == height);
+            return Wallpapers.Where(w => w.Resolution.width == width && w.Resolution.height == height);
         }
     }
 

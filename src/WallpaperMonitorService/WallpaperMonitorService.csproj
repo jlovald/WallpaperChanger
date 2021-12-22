@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ElmerWallpaper\Wallpaper.csproj" />
+    <ProjectReference Include="..\Wallpaper\Wallpaper.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,9 +22,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="XCOPY &quot;$(TargetDir)*&quot; &quot;C:\Services\WallPaperMonitor\&quot; /S /Y" />
-  </Target>
 
 </Project>
