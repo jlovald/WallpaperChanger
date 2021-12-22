@@ -67,8 +67,8 @@ namespace Wallpaper
             _wallpaperCache = currentWallpapers;
             try
             {
-                var currentWallpaperJson = JsonSerializer.Serialize(currentWallpapers);
-                await using var fw = File.Open(_folderSettings.GetCachePath(), FileMode.OpenOrCreate);
+                var currentWallpaperJson = JsonSerializer.Serialize(currentWallpapers.ToArray());
+                await using var fw = File.Open(_folderSettings.GetCachePath(), FileMode.Create);
                 await using var sw = new StreamWriter(fw);
                 await sw.WriteAsync(currentWallpaperJson);
             }

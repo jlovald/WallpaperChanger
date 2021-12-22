@@ -72,26 +72,27 @@ namespace Wallpaper
                 }
                 _logger.LogInformation($"Got the the wallpaper: '{wallpaper?.FullPath}' for the monitor: {screen.DeviceName}");
 
+                wallpaperSateCache.Add(
+                    new WallpaperCacheEntry(DateTime.UtcNow.Add(_wallpaperSettings.WallpaperLifetime), screen,
+                        wallpaper));
                 if (wallpaper == null) continue;
 
                 var img = Image.FromFile(wallpaper.FullPath);
                 var (x, y) = CalculateMonitorOriginCoordinates(monitorOverview, screen);
                 graphics.DrawImage(img, x, y, img.Width, img.Height);
 
-                wallpaperSateCache.Add(
-                    new WallpaperCacheEntry(DateTime.UtcNow.Add(_wallpaperSettings.WallpaperLifetime), screen,
-                        wallpaper));
+                
                 img.Dispose();
             }
 
             await _wallpaperCache.SetCurrentWallpaperState(wallpaperSateCache);
-            graphics.Dispose();
 
             _logger.LogInformation($"Saving new wallpaper to: {tmpImagePath}");
 
             bitmap.Save(tmpImagePath, ImageFormat.Bmp);
+            graphics.Dispose();
             bitmap.Dispose();
-
+            
             SetBackground(tmpImagePath);
             return tmpImagePath;
 
@@ -105,20 +106,21 @@ namespace Wallpaper
                 screen.Bounds.Y + Math.Abs(monitorOverview.Dimensions.Y));
         }
 
-        private (Bitmap bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview, string existingBackgroundPath)
+        private (Image bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview, string existingBackgroundPath)
         {
             Graphics graphics;
             if (!string.IsNullOrEmpty(existingBackgroundPath))
             {
                 try
                 {
-                    using Image existingBackground = Image.FromFile(existingBackgroundPath);
+                    using var existingBackground = Image.FromFile(existingBackgroundPath);
                     if (existingBackground != null && existingBackground.Width == overview.Dimensions.Width &&
                         existingBackground.Height == overview.Dimensions.Height)
                     {
                         graphics = Graphics.FromImage(existingBackground);
+                        
                         graphics.Clear(SystemColors.AppWorkspace);
-                        return ((Bitmap) existingBackground, graphics);
+                        return (new Bitmap(existingBackground), graphics);
                     }
                 }
                 catch (Exception ex)

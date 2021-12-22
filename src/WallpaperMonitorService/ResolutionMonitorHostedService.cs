@@ -37,14 +37,14 @@ namespace WallpaperMonitorService
             }
         }
 
-        private  void HandleDisplayChange(object obj, EventArgs e)
+        private async void HandleDisplayChange(object obj, EventArgs e)
         {
             try
             {
                 _logger.LogInformation("Display settings changed, set new wallpapers");
                 if (_displaySettingsCache.HasChanged(Screen.AllScreens))
                 {
-                     _wallpaperEngine.GenerateWallpaper().RunSynchronously();
+                     await _wallpaperEngine.GenerateWallpaper();
 
                 }
             }
@@ -67,7 +67,7 @@ namespace WallpaperMonitorService
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            SystemEvents.DisplaySettingsChanged -= HandleDisplayChange;
+            SystemEvents.DisplaySettingsChanged -=  HandleDisplayChange;
             return Task.CompletedTask;
         }
 
