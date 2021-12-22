@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -89,10 +90,11 @@ namespace Wallpaper
 
             _logger.LogInformation($"Saving new wallpaper to: {tmpImagePath}");
 
-            bitmap.Save(tmpImagePath, ImageFormat.Bmp);
+            var tmpPath = tmpImagePath + ".tmp";
+            bitmap.Save(tmpPath, ImageFormat.Bmp);
             graphics.Dispose();
             bitmap.Dispose();
-            
+            File.Move(tmpPath, tmpImagePath, true);
             SetBackground(tmpImagePath);
             return tmpImagePath;
 
