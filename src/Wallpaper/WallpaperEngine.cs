@@ -26,8 +26,6 @@ namespace Wallpaper
 
         private readonly WallpaperSettings _wallpaperSettings;
 
-        private static int changes = 0;
-
         public WallpaperEngine(IOptions<WallpaperSettings> wallpaperSettings, WallpaperCollection wallpaperCollection,
             ILogger<WallpaperEngine> logger, IDisplaySettingsCache displaySettingsCache,
             IOptions<FolderConfiguration> folderSettings, IWallpaperCache wallpaperCache)
@@ -40,85 +38,105 @@ namespace Wallpaper
             _wallpaperCache = wallpaperCache;
         }
 
-        public MonitorEnvironmentOverview GetMonitorsAndDimensions()
-        {
-            var a = new MonitorEnvironmentOverview();
-            a.Dimensions = GetBounds(_displaySettingsCache.GetDisplaySettings());
-            a.Screens = _displaySettingsCache.GetDisplaySettings().Select(s => new TrimmedScreen()
-            {
-                Bounds = s.Bounds,
-                DeviceName = s.DeviceName,
-                IsPrimaryDisplay = s.Primary
-            });
-            return a;
-        }
 
 
-        public async Task<string> CreateRandomWallpaper()
+        /// <summary>
+        /// Generates a new wallpaper and sets it as the new background.
+        /// </summary>
+        /// <returns> path of temporary wallpaper</returns>
+        public async Task<string> GenerateWallpaper()
         {
-            changes++;
-            var overview = GetMonitorsAndDimensions();
-            var wallpapers = _wallpaperCollection;
-            var canvas = new Bitmap(overview.Dimensions.Width, overview.Dimensions.Height);
-            var g = Graphics.FromImage(canvas);
-            g.Clear(SystemColors.AppWorkspace);
-            var wallpaperCache = new List<WallpaperCacheEntry>();
-            foreach (var screen in overview.Screens)
+            var tmpImagePath = _folderSettings.GetTmpImagePath();
+            
+            var monitorOverview = GetMonitorsAndDimensions();
+            var (bitmap, graphics) = GenerateCanvas(monitorOverview, tmpImagePath);
+            var wallpaperSateCache = new List<WallpaperCacheEntry>();
+
+            foreach (var screen in monitorOverview.Screens)
             {
-                //  Get wallpaper for given resolution
-                Wallpaper wallpaper = null;
+                Wallpaper wallpaper;
+                //  Check for existing wallpaper state for matching monitors.
                 var cachedWallpaperEntry = (await _wallpaperCache.GetCurrentWallpapers()).FirstOrDefault(e =>
                     e.Screen.DeviceName == screen.DeviceName &&
                     e.Screen.Bounds.Height == screen.Bounds.Height &&
                     e.Screen.Bounds.Width == screen.Bounds.Width); //  TODO: Fix scaling etc.
-                var cachedWallpaper = cachedWallpaperEntry?.Wallpaper; //  use later for some logic
+
                 if (cachedWallpaperEntry != null && cachedWallpaperEntry.Expiration > DateTime.UtcNow)
                 {
                     wallpaper = cachedWallpaperEntry.Wallpaper;
                 }
                 else
                 {
-                    //  use massive brain.
-                    wallpaper = wallpapers.GetWallpapers(screen.Bounds.Width, screen.Bounds.Height).Randomize()
+                    wallpaper = _wallpaperCollection.GetWallpapers(screen.Bounds.Width, screen.Bounds.Height).Randomize()
                         .FirstOrDefault();
                 }
-                  
-
-
-                _logger.LogInformation("Got the following wallpaper ", wallpaper);
+                _logger.LogInformation($"Got the the wallpaper: '{wallpaper?.FullPath}' for the monitor: {screen.DeviceName}");
 
                 if (wallpaper == null) continue;
-                var img = Image.FromFile(wallpaper.FullPath);
 
-                //  calculate x and y based on origin.
-                var x = screen.Bounds.X + Math.Abs(overview.Dimensions.X);
-                var y = screen.Bounds.Y + Math.Abs(overview.Dimensions.Y);
-                g.DrawImage(img, x, y, img.Width, img.Height);
-                wallpaperCache.Add(
+                var img = Image.FromFile(wallpaper.FullPath);
+                var (x, y) = CalculateMonitorOriginCoordinates(monitorOverview, screen);
+                graphics.DrawImage(img, x, y, img.Width, img.Height);
+
+                wallpaperSateCache.Add(
                     new WallpaperCacheEntry(DateTime.UtcNow.Add(_wallpaperSettings.WallpaperLifetime), screen,
                         wallpaper));
                 img.Dispose();
             }
-            await _wallpaperCache.SetCurrentWallpapers(wallpaperCache);
 
-            g.Dispose();
+            await _wallpaperCache.SetCurrentWallpaperState(wallpaperSateCache);
+            graphics.Dispose();
 
-            var fullPath = _folderSettings.GetTmpImagePath();
-            _logger.LogInformation($"Saving new wallpaper to: {fullPath}");
+            _logger.LogInformation($"Saving new wallpaper to: {tmpImagePath}");
 
-            canvas.Save(fullPath, ImageFormat.Bmp);
-            canvas.Dispose();
+            bitmap.Save(tmpImagePath, ImageFormat.Bmp);
+            bitmap.Dispose();
 
+            SetBackground(tmpImagePath);
+            return tmpImagePath;
 
-            SetBackground(fullPath);
-            return fullPath; //  TODO: Use Cache to determine wallpapers
-            //  TODO use appdata or something like that instead.
         }
 
 
-        private void SetBackground(string path)
+
+        private (int x, int y) CalculateMonitorOriginCoordinates(MonitorEnvironmentOverview monitorOverview, TrimmedScreen screen)
         {
-            //  Todo make this more readable
+            return (screen.Bounds.X + Math.Abs(monitorOverview.Dimensions.X),
+                screen.Bounds.Y + Math.Abs(monitorOverview.Dimensions.Y));
+        }
+
+        private (Bitmap bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview, string existingBackgroundPath)
+        {
+            Graphics graphics;
+            if (!string.IsNullOrEmpty(existingBackgroundPath))
+            {
+                try
+                {
+                    using Image existingBackground = Image.FromFile(existingBackgroundPath);
+                    if (existingBackground != null && existingBackground.Width == overview.Dimensions.Width &&
+                        existingBackground.Height == overview.Dimensions.Height)
+                    {
+                        graphics = Graphics.FromImage(existingBackground);
+                        graphics.Clear(SystemColors.AppWorkspace);
+                        return ((Bitmap) existingBackground, graphics);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error while reading existing backgroundImage.", ex);
+                }
+                
+            }
+
+            var bitmap = new Bitmap(overview.Dimensions.Width, overview.Dimensions.Height);
+            graphics = Graphics.FromImage(bitmap);
+            graphics.Clear(SystemColors.AppWorkspace);
+
+            return (bitmap, graphics);
+        }
+
+        private static void SetBackground(string path)
+        {
             SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path, 0x0001);
         }
 
@@ -131,6 +149,18 @@ namespace Wallpaper
             var yMax = rectangles.Max(s => s.Y + s.Height);
             return new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
         }
+
+        private MonitorEnvironmentOverview GetMonitorsAndDimensions() => new MonitorEnvironmentOverview
+        {
+            Dimensions = GetBounds(_displaySettingsCache.GetDisplaySettings()),
+            Screens = _displaySettingsCache.GetDisplaySettings().Select(s => new TrimmedScreen()
+            {
+                Bounds = s.Bounds,
+                DeviceName = s.DeviceName,
+                IsPrimaryDisplay = s.Primary
+            })
+        };
+       
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SystemParametersInfo(uint action, uint uParam, string vParam, uint winIni);

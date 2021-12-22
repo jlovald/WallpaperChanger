@@ -29,7 +29,7 @@ namespace WallpaperMonitorService
         {
             try
             {
-                await _wallpaperEngine.CreateRandomWallpaper();
+                await _wallpaperEngine.GenerateWallpaper();
             }
             catch (Exception ex)
             {
@@ -44,7 +44,7 @@ namespace WallpaperMonitorService
                 _logger.LogInformation("Display settings changed, set new wallpapers");
                 if (_displaySettingsCache.HasChanged(Screen.AllScreens))
                 {
-                     _wallpaperEngine.CreateRandomWallpaper().RunSynchronously();
+                     _wallpaperEngine.GenerateWallpaper().RunSynchronously();
 
                 }
             }

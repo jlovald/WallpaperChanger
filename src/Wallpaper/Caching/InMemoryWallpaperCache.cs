@@ -13,7 +13,7 @@ namespace Wallpaper
             return _cache;
         }
 
-        public async Task SetCurrentWallpapers(List<WallpaperCacheEntry> currentWallpapers)
+        public async Task SetCurrentWallpaperState(List<WallpaperCacheEntry> currentWallpapers)
         {
             _cache = currentWallpapers;
         }

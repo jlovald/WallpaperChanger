@@ -62,7 +62,7 @@ namespace Wallpaper
             return _wallpaperCache;
         }
 
-        public async Task SetCurrentWallpapers(List<WallpaperCacheEntry> currentWallpapers)
+        public async Task SetCurrentWallpaperState(List<WallpaperCacheEntry> currentWallpapers)
         {
             _wallpaperCache = currentWallpapers;
             try

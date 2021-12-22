@@ -10,7 +10,7 @@ namespace Wallpaper
     {
         //  Pair montior by name and path to wallpaper.
         Task<List<WallpaperCacheEntry>> GetCurrentWallpapers();
-        public Task SetCurrentWallpapers(List<WallpaperCacheEntry> currentWallpapers);
+        public Task SetCurrentWallpaperState(List<WallpaperCacheEntry> currentWallpapers);
 
     }
 
