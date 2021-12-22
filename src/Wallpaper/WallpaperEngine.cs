@@ -52,7 +52,6 @@ namespace Wallpaper
             var monitorOverview = GetMonitorsAndDimensions();
             var (bitmap, graphics) = GenerateCanvas(monitorOverview, tmpImagePath);
             var wallpaperSateCache = new List<WallpaperCacheEntry>();
-
             foreach (var screen in monitorOverview.Screens)
             {
                 Wallpaper wallpaper;
@@ -78,7 +77,7 @@ namespace Wallpaper
                         wallpaper));
                 if (wallpaper == null) continue;
 
-                var img = Image.FromFile(wallpaper.FullPath);
+                using var img = Image.FromFile(wallpaper.FullPath);
                 var (x, y) = CalculateMonitorOriginCoordinates(monitorOverview, screen);
                 graphics.DrawImage(img, x, y, img.Width, img.Height);
 
@@ -90,11 +89,9 @@ namespace Wallpaper
 
             _logger.LogInformation($"Saving new wallpaper to: {tmpImagePath}");
 
-            var tmpPath = tmpImagePath + ".tmp";
-            bitmap.Save(tmpPath, ImageFormat.Bmp);
+            bitmap.Save(tmpImagePath, ImageFormat.Bmp);
             graphics.Dispose();
             bitmap.Dispose();
-            File.Move(tmpPath, tmpImagePath, true);
             SetBackground(tmpImagePath);
             return tmpImagePath;
 
@@ -110,30 +107,10 @@ namespace Wallpaper
 
         private (Image bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview, string existingBackgroundPath)
         {
-            Graphics graphics;
-            if (!string.IsNullOrEmpty(existingBackgroundPath))
-            {
-                try
-                {
-                    using var existingBackground = Image.FromFile(existingBackgroundPath);
-                    if (existingBackground != null && existingBackground.Width == overview.Dimensions.Width &&
-                        existingBackground.Height == overview.Dimensions.Height)
-                    {
-                        graphics = Graphics.FromImage(existingBackground);
-                        
-                        graphics.Clear(SystemColors.AppWorkspace);
-                        return (new Bitmap(existingBackground), graphics);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("Error while reading existing backgroundImage.", ex);
-                }
-                
-            }
+           
 
             var bitmap = new Bitmap(overview.Dimensions.Width, overview.Dimensions.Height);
-            graphics = Graphics.FromImage(bitmap);
+            var graphics = Graphics.FromImage(bitmap);
             graphics.Clear(SystemColors.AppWorkspace);
 
             return (bitmap, graphics);
