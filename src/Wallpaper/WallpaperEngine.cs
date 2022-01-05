@@ -105,10 +105,9 @@ namespace Wallpaper
                 screen.Bounds.Y + Math.Abs(monitorOverview.Dimensions.Y));
         }
 
-        private (Image bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview, string existingBackgroundPath)
+        private (Image bitmap, Graphics graphics) GenerateCanvas(MonitorEnvironmentOverview overview,
+            string existingBackgroundPath)
         {
-           
-
             var bitmap = new Bitmap(overview.Dimensions.Width, overview.Dimensions.Height);
             var graphics = Graphics.FromImage(bitmap);
             graphics.Clear(SystemColors.AppWorkspace);
