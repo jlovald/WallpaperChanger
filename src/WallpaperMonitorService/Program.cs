@@ -1,12 +1,9 @@
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wallpaper;
-using Wallpaper.Options;
 using WallpaperMonitorService.Extensions;
 
 namespace WallpaperMonitorService
