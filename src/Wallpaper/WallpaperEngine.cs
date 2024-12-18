@@ -61,7 +61,7 @@ namespace Wallpaper
                     e.Screen.Bounds.Height == screen.Bounds.Height &&
                     e.Screen.Bounds.Width == screen.Bounds.Width); //  TODO: Fix scaling etc.
 
-                if (cachedWallpaperEntry != null && cachedWallpaperEntry.Expiration > DateTime.UtcNow)
+                if (cachedWallpaperEntry is { Wallpaper: { } } && cachedWallpaperEntry.Expiration > DateTime.UtcNow)
                 {
                     wallpaper = cachedWallpaperEntry.Wallpaper;
                 }
@@ -120,7 +120,7 @@ namespace Wallpaper
             SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path, 0x0001);
         }
 
-        private static Rectangle GetBounds(IEnumerable<Screen> rects)
+        private static Rectangle GetBounds(IEnumerable<TrimmedScreen> rects)
         {
             var rectangles = rects.Select(r => r.Bounds).ToList();
             var xMin = rectangles.Min(s => s.X);
@@ -130,19 +130,82 @@ namespace Wallpaper
             return new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
         }
 
-        private MonitorEnvironmentOverview GetMonitorsAndDimensions() => new MonitorEnvironmentOverview
+        private MonitorEnvironmentOverview GetMonitorsAndDimensions()
         {
-            Dimensions = GetBounds(_displaySettingsCache.GetDisplaySettings()),
-            Screens = _displaySettingsCache.GetDisplaySettings().Select(s => new TrimmedScreen()
+            var trimmedScreens = new List<TrimmedScreen>();
+            foreach (var screen in _displaySettingsCache.GetDisplaySettings())
             {
-                Bounds = s.Bounds,
-                DeviceName = s.DeviceName,
-                IsPrimaryDisplay = s.Primary
-            })
-        };
+                DEVMODE dm = new DEVMODE();
+                dm.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+                EnumDisplaySettings(screen.DeviceName, -1, ref dm);
+                
+                var scalingFactor = Math.Round(Decimal.Divide(dm.dmPelsWidth, screen.Bounds.Width), 2);
+                var trimmedScreen = new TrimmedScreen()
+                {
+                    Bounds = new Rectangle
+                    {
+                        Height = (int)(screen.Bounds.Height * scalingFactor),
+                        Location = screen.Bounds.Location,
+                        Width = (int)(screen.Bounds.Width * scalingFactor),
+                        X = screen.Bounds.X,
+                        Y = screen.Bounds.Y
+                    },
+                    DeviceName = screen.DeviceName,
+                    IsPrimaryDisplay = screen.Primary
+                };
+                trimmedScreens.Add(trimmedScreen);
+            }
+            
+            return new MonitorEnvironmentOverview
+            {
+                Dimensions = GetBounds(trimmedScreens),
+                Screens = trimmedScreens
+            };
+        }
        
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SystemParametersInfo(uint action, uint uParam, string vParam, uint winIni);
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DEVMODE
+        {
+            private const int CCHDEVICENAME = 0x20;
+            private const int CCHFORMNAME = 0x20;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string dmDeviceName;
+            public short dmSpecVersion;
+            public short dmDriverVersion;
+            public short dmSize;
+            public short dmDriverExtra;
+            public int dmFields;
+            public int dmPositionX;
+            public int dmPositionY;
+            public ScreenOrientation dmDisplayOrientation;
+            public int dmDisplayFixedOutput;
+            public short dmColor;
+            public short dmDuplex;
+            public short dmYResolution;
+            public short dmTTOption;
+            public short dmCollate;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string dmFormName;
+            public short dmLogPixels;
+            public int dmBitsPerPel;
+            public int dmPelsWidth;
+            public int dmPelsHeight;
+            public int dmDisplayFlags;
+            public int dmDisplayFrequency;
+            public int dmICMMethod;
+            public int dmICMIntent;
+            public int dmMediaType;
+            public int dmDitherType;
+            public int dmReserved1;
+            public int dmReserved2;
+            public int dmPanningWidth;
+            public int dmPanningHeight;
+        }
+        [DllImport("user32.dll")]
+        public static extern bool EnumDisplaySettings(string lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
+
     }
 }
